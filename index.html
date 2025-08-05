@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Itinerario de Viaje: Costa Oeste USA</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* gray-50 */
+        }
+        .leaflet-container {
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .info-item i {
+            flex-shrink: 0;
+        }
+        .info-item div {
+            line-height: 1.7;
+        }
+        .accordion-content {
+            transition: max-height 0.5s ease-in-out;
+        }
+        .accordion-header i {
+            transition: transform 0.3s ease-in-out;
+        }
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
+        .tab-button.active {
+            border-color: #3b82f6; /* blue-500 */
+            background-color: #eff6ff; /* blue-50 */
+            color: #2563eb; /* blue-600 */
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <!-- Header -->
+    <header class="relative bg-cover bg-center text-white shadow-md py-20 md:py-28" style="background-image: url('https://images.unsplash.com/photo-1509316785289-0c5f2b9e54a6?q=80&w=2070&auto=format&fit=crop');">
+        <div class="absolute inset-0 bg-black opacity-50"></div>
+        <div class="relative container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-6xl font-bold tracking-tight">Itinerario de Viaje: Costa Oeste 2025</h1>
+            <p class="mt-4 text-lg md:text-xl max-w-3xl mx-auto">Una aventura inolvidable desde San Francisco a Los Ángeles y más allá.</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <!-- Tabs Navigation -->
+        <div class="mb-8 border-b border-gray-200">
+            <nav class="flex space-x-4" aria-label="Tabs">
+                <button class="tab-button active font-semibold px-4 py-3 border-b-2 border-transparent text-gray-500 hover:text-blue-600 hover:border-blue-300 transition-colors" data-tab="summary">
+                    <i class="ph-bold ph-chart-bar-horizontal mr-2"></i>Resumen
+                </button>
+                <button class="tab-button font-semibold px-4 py-3 border-b-2 border-transparent text-gray-500 hover:text-blue-600 hover:border-blue-300 transition-colors" data-tab="itinerary">
+                    <i class="ph-bold ph-calendar-check mr-2"></i>Itinerario
+                </button>
+                <button class="tab-button font-semibold px-4 py-3 border-b-2 border-transparent text-gray-500 hover:text-blue-600 hover:border-blue-300 transition-colors" data-tab="logistics">
+                    <i class="ph-bold ph-bed mr-2"></i>Logística
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tabs Content -->
+        <div>
+            <!-- Summary Tab -->
+            <div id="summary-content" class="tab-content active">
+                <section id="main-map-section" class="mb-12">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-700">Ruta Completa del Viaje</h2>
+                    <div id="main-map" class="w-full h-96 md:h-[500px]"></div>
+                </section>
+
+                <section id="stats-section" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <i class="ph-bold ph-calendar-blank text-4xl text-blue-500"></i>
+                        <div>
+                            <p class="text-gray-500">Duración</p>
+                            <p id="trip-duration" class="text-2xl font-bold text-gray-800"></p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <i class="ph-bold ph-road-horizon text-4xl text-green-500"></i>
+                        <div>
+                            <p class="text-gray-500">Distancia Estimada</p>
+                            <p class="text-2xl font-bold text-gray-800">~4,500 km</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <i class="ph-bold ph-airplane-takeoff text-4xl text-purple-500"></i>
+                        <div>
+                            <p class="text-gray-500">Tipo de Viaje</p>
+                            <p class="text-2xl font-bold text-gray-800">Road Trip</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4 text-gray-700 flex items-center"><i class="ph-bold ph-buildings mr-3 text-orange-500"></i>Ciudades Principales</h3>
+                        <ul class="space-y-3 text-gray-600">
+                            <li class="flex items-center"><i class="ph-fill ph-circle-wavy-check text-blue-500 mr-3"></i>San Francisco</li>
+                            <li class="flex items-center"><i class="ph-fill ph-circle-wavy-check text-blue-500 mr-3"></i>Las Vegas</li>
+                            <li class="flex items-center"><i class="ph-fill ph-circle-wavy-check text-blue-500 mr-3"></i>Los Ángeles</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4 text-gray-700 flex items-center"><i class="ph-bold ph-tree-evergreen mr-3 text-green-600"></i>Parques Nacionales</h3>
+                        <ul class="space-y-3 text-gray-600">
+                            <li class="flex items-center"><i class="ph-fill ph-circle-wavy-check text-green-500 mr-3"></i>Yosemite</li>
+                            <li class="flex items-center"><i class="ph-fill ph-circle-wavy-check text-green-500 mr-3"></i>Sequoia</li>
+                            <li class="flex items-center"><i class="ph-fill ph-circle-wavy-check text-green-500 mr-3"></i>Zion</li>
+                            <li class="flex items-center"><i class="ph-fill ph-circle-wavy-check text-green-500 mr-3"></i>Gran Cañón</li>
+                            <li class="flex items-center"><i class="ph-fill ph-circle-wavy-check text-green-500 mr-3"></i>Antelope Canyon</li>
+                        </ul>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Itinerary Tab -->
+            <div id="itinerary-content" class="tab-content">
+                <section id="itinerary-days">
+                    <div id="days-container" class="space-y-4">
+                        <!-- Day cards will be injected here by JavaScript -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- Logistics Tab -->
+            <div id="logistics-content" class="tab-content">
+                <section id="flight-logistics" class="mb-12">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-700">Información de Vuelos</h2>
+                    <div id="flights-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Flight cards will be injected here -->
+                    </div>
+                </section>
+                <section id="hotel-logistics">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-700">Información Logística de Hoteles</h2>
+                    <div id="hotels-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Hotel cards will be injected here -->
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-12 py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2025 Tu Aventura en la Costa Oeste. ¡Buen viaje!</p>
+        </div>
+    </footer>
+
+    <script>
+        // CSV Data for the itinerary
+        const csvData = `Lugar,San Francisco,San Francisco.1,San Francisco.2,Mariposa + Yosemite,Mariposa,Vegas,Vegas.1,Zion Park,Page,Gran Canyon,Ruta 66,Los Angeles,Los Angeles.1,Los Angeles.2,Disneyland (70th Aniversary Edition),Disneyland (70th Aniversary Edition).1,Big Sur,Silicon Valley,San Francisco.3
+Día,martes 19 ago,miércoles 20 ago,jueves 21 ago,viernes 22 ago,sábado 23 ago,domingo 24 ago,lunes 25 ago,martes 26 ago,miércoles 27 ago,jueves 28 ago,viernes 29 ago,sábado 30 ago,domingo 31 ago,lunes 1 sept,martes 2 sept,miércoles 3 sept,jueves 4 sept,viernes 5 sept,sábado 6 sept
+Desayuno,,7:30 Darren's Café,8:30 Desayuno Google San Franscisco%(Llevar DNIs o Pasaporte!!),Airbnb,Airbnb%,Improvisamos,Improvisamos,7:00 Foto Cartel Welcome Las Vegas %%Crumbl Cookies Cannery + Starbucks%Las comemos en el coche%%,Airbnb,Harvey House Café  o en el Food Court,Motel o si hay hambre Diner,Airbnb,Airbnb,Starbucks Warner Bros o Airbnb,Hotel o en el parque,Hotel o en el parque,8:00 Google PLV%PASAPORTES!!,Desayuno Hotel%,Improvisamos
+Mañana,Vuelo 13:00,8:15 am 2661 Taylor Street %%Tour en bicicletas por el Golden Gate y Sausalito,10:30 Visita a Union Square (Cable Car) y Chinatown %%,7:30 Yosemite Temprano%Visitar el valle temprano y luego Glacier point si nos da tiempo. ,8:00 Viaje a Sequoia National Park %11:00 Sequoia Park + General Sherman,Ruta Casino Norte%%9:00 Forum Caesars%Canal del Venetian%% 11:30-12:30 Sphere%Wymm + Encore%%Fashion Show%Treasure Island%%%,Ruta Casino Sur%%9:00 Ceaser Palace%Conservatory & Botanical Gardens - Bellagio%Paris Paris%M&Ms World%%12:00 Posibles planes%Acuario Mandalay Bay?%FlyOver Las Vegas Hard Rock?%PAWN shop?%Omega MArt?%Area15?%The Mob Museum?,7:30 Viaje a zion temprano (2h)%10:00 Visita a Zion Park si llegamos temprano (4 horas)%,"8:30 Ir muy temprano a HorseShoe Bend %%%10:30 Antelope Canyon - 90 min%Repasar mail - No bags, dressing code, etc..",9:00 Visita al Gran Canyon,9:00 Viaje a Hoover Dam%%11:00 Viaje a Calico Ghost Town,"9:30 Downtown, Central Market, China Town, Olvera Street y Little Tokyo %%Parking - 308 Hill St.",10 am - 2.5 h Paseo en bici de Santa Monica (ojo libreria) a Venice Beach %,"9:00 Warner Bros. Studio Tour Hollywood (2,5 h)%%12:'00 West Hollywood - Paseo de la fama %(Tienda Sorpresa)%(Parking en el centro comercial Ovation Hollywood)",Disneyland %%Rise of the Resistant (Se pilla en el parque)%Orden:%-Millenium Falcon %-Indiana Jones (se estropea mucho) con Lighting Pass%%Star tours%Piratas del caribe%Hounted Mansion (Halloween!!)%Spash Mountain (Tiara and the frog)%Space Mountain%Big Thunder Mountain%Matterhorn Bobsleds%Toon Town %Alicia en el pais de las maravillas%Mr Toad wild ride  %,Disney California Adventure %Radiators Spring (cars)%%Spiderman%Guardianes de la galaxia%Incredicoaster Roller Coster (de los increibles)  %Grizzly River Run%Noria (Cabeza Mickey) - Dos tipos de movimiento (Gondolas)%Soarin’ Around The World %Toy Story Midway Mania!%%Shows%Visitar Plaza de la Familia (Día de los Muerdos decor)  %%Visitar Guardianes de la galaxia por la noche (Monsters after Dark version),11:00 Visita Santa Bárbara ,"9:00 Viaje a Silicon Valley (1,5 h)% %10:30 GooglePlex%Slides para zumos?%Paseo Tienda Google% %13:00 Bay View%",9:00 Alcatraz%%12:30 Twin Peaks?%Golden Gate Park?
+Comida,,13:00 On the way (Ferry Building) ,13:30 Delancey Foundation %,Comida en Yosemite%%14:30 Salida de Yosemite (1 hora a Mariposa) ,"On the way, sandwiches o diner en algún sitio","Mexicano o Sushi, Ćhipotle? - Fashion Show",Outlet Sur?%,14:00 En algún sitio de Zion o Springdale,13:00 Big John BBQ Texas,Restaurantes parque o Food Trucks,13:30 Peggy Sue's Diner ,Little Tokyo + The Last Bookstores%%14:00 Chubby Cattle BBQ | Little Tokyo,Santa Monica%Shake Shack o Mexicano?,Hard Rock Cafe Hollywood %o%Shake Shack en frente de la tienda?,Docking Bay 7 Food and Cargo,Donde podamos,Santa Barbara? De camino antes de llegar a Carmel %Fernwood Tavern?,12:00 Charlies,Baby Blues BBQ @ Mission
+Tarde,"16:00 Llegada SFO %%18:15 Transporte a %Ghirardelli Chocolate Experience, subida al Fort Mason Park con vistas al atardecer del Golden Gate%","16:00 Visita a Mission Dolores Park y Castro%%18:00 Visita a Lombard St,  Fisherman Wharf y Pier 39",15:00 Visita opcional a Painted Ladies y/o Hidden Stairs%15:30 Subir a Twin Peaks %%16:00 Viaje a Mariposa (3 h) %%19:30 Comprar comida/bebida en Oakhurst (supermercados cierran a las 22:00)%-2 Desayunos %-2 Cenas (BBQ + veggies)%-1 Comida en Yosemite),15:30 Mariposa Grove (Cierra a las 17:00!!!),Viaje a las vegas%5 horas%,Posible Tiempo piscina%%17:30 Uber a Park Av%%Surprise!%%19:00 Ka Show (90 min)%%,16:00 Compras Outlet Sur%,Viaje a Page (2 h)%%16:00 Checkin Airbnb (comprar comida + desayuno)%%18:00 Glen Canyon %Ver la presa desde el Carl Hayden Visitr Ctr y andar hasta The New Wave (20 + 20 min)%%19:15 Sunset Donde vemos el sunset? Sunset 89?,"%%14:30 Viaje a Gran Canyon (2,5 h)%%18:00 Ver atardecer en el Gran Canyon","16:15 tour Tusayan%%17:30 Inicio Viaje ruta 66%Ruta 66 Williams, Seligman, Kingman%",14:30 Calico Ghost Town Campground  (1 o 2 horas)%%16:30 Viaje a Los Angeles%%19:00 AIRBNB CHECKIN + Comprar comida%-3 desayunos%-2 cenas,16:15 Observatorio Griffin + Sunset 19:30%OJO Parking,14:30 Paseo por Rodeo Drive + Beverly Hills  + Mullholand Dr%%Tarde Libre en el Airbnb + Coladas%%,Museo de Ciencias %The Getty Museum,Disneyland%Ver parades y shows nocturnos aqui,%21:00 o 22:15 “World of Color Happiness!” ,Recorriendo Big Sur hasta Carmel by the sea (4 horas),15:00  Visita a Stanford%%18:00 Visita a Japan town,Vuelo 17:00
+Cena,19:30   Cena Radhaus (RESERVADO),20:00 Surisan%(RESERVADO),BBQ Airbnb,BBQ Airbnb,21-22:00 In-N-out @ The Linq,21:00 Cena abierta: opciones%Gordon Ramsay Burger %Sirrico's Pizza%BBQ Coreana%%Ver espectáculo fuentes Bellagio (cada 15 min),19:30 Pillar el MonoRail%20:30 Cena Sorpresa%Ir en el MonoRail,BBQ Airbnb o BirdHouse take away,Tusayan o en el complejo de parque (taberna),Seligman - Diner o Mexicano en Kingman,BBQ LAX,Tesla Diner,BBQ Airbnb,Ir pronto!! Downtown Disney District%20:00 Din Tai Fung,Cena en Ronto Roasters,,Sushi Kuma? Griego?%De Camino a Monterrey?,BBQ Koreana en Japan Town o Sushi o Ramen,
+Alojamiento,Hotel del Sol,Hotel del Sol,Airbnb Mariposa - Bass Lake,Airbnb Mariposa - Bass Lake,Hotel Vegas,Hotel Vegas,Hotel Vegas,Aibnb Page,Hotel Gran Canyon Bright Angel Lodge,Best Western Plus A Wayfarer's Inn And Suites,Airbnb LAX,Airbnb LAX,Airbnb LAX,Pixar Disney Hotel,Pixar Disney Hotel,Pixar Disney Hotel,Portola Hotel & Spa at Monterey Bay,Kimpton Hotel Enso @ Japantown,`;
+
+        // CSV Data for hotels
+        const hotelsCsvData = `Lugar,Nombre,Dirección,Fecha,Noches
+"SFO - Pablo","Hotel del Sol","3100 Webster St, San Francisco, CA, 94123 Estados Unidos","19 agosto",2.0
+"SFO - Javier","Airbnb","Filbert St","19 agosto",2.0
+"Mariposa","Airbnb","40376 Road 222, Bass Lake, CA 93604","21 agosto",2.0
+"Las Vegas - Pablo","The Linq","3535 Las Vegas Blvd S, Las Vegas, NV 89109, United States","23 agosto",3.0
+"Las Vegas - Javier","The Venetian","3355 S Las Vegas Blvd, Las Vegas, NV 89109, United States","23 agosto",3.0
+"Page","Airbnb","13 Veronica Court, Page, AZ 86040","26 agosto",1.0
+"Gran Canyon","Bright Angel Lodge","9 Village Loop Drive, Grand Canyon Village, AZ 86023, United States","27 agosto",1.0
+"Ruta 66 - ","Best Western Plus A Wayfarer's Inn And Suites","2815 E Andy Devine Ave, Kingman, AZ, 86401, United States","28 agosto",1.0
+"LAX","Airbnb","2176 Coldwater Canyon Drive\nBeverly Hills, CA 90210","29 agosto",3.0
+"Disney","Pixar Hotel","1717 Disneyland Dr, Anaheim, CA 92802, United States","1 septiembre",3.0
+"Big Sur","Portola Hotel & Spa at Monterey Bay","Two Portola Plaza, Monterey, CA 93940, United States","4 septiembre",1.0
+"SFO - Vuelta","Kimpton Hotel Enso","1800 Post St, San Francisco, CA 94115, United States","5 septiembre",1.0`;
+
+        // CSV Data for flights
+        const flightsCsvData = `Vuelo,Ruta,Salida,Llegada
+IB0355,MAD-SFO,19 agosto 12:35,19 agosto 16:10
+IB0356,SFO-MAD,6 septiembre 17:45,7 septiembre 14:10`;
+
+        /**
+         * Parses a single line of a CSV file, handling quoted fields.
+         * @param {string} line - A string representing a single row from a CSV.
+         * @returns {string[]} An array of strings, representing the cells of the row.
+         */
+        function parseCsvLine(line) {
+            const values = [];
+            const regex = /("([^"]|"")*"|[^,]*)(,|$)/g;
+            let match;
+            regex.lastIndex = 0;
+            while (match = regex.exec(line)) {
+                let value = match[1];
+                if (value.startsWith('"') && value.endsWith('"')) {
+                    value = value.slice(1, -1).replace(/""/g, '"');
+                }
+                values.push(value);
+                if (match[3] === '') break;
+            }
+            return values;
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+             // Define locations here to be accessible by all functions
+            const locations = {
+                "San Francisco": [37.7749, -122.4194],
+                "Mariposa + Yosemite": [37.6836, -119.9234],
+                "Mariposa": [37.4849, -119.9663],
+                "Vegas": [36.1699, -115.1398],
+                "Zion Park": [37.2982, -113.0263],
+                "Page": [36.9147, -111.4558],
+                "Gran Canyon": [36.0592, -112.1401],
+                "Ruta 66": [35.2733, -114.5964],
+                "Los Angeles": [34.0522, -118.2437],
+                "Disneyland (70th Aniversary Edition)": [33.8121, -117.9190],
+                "Big Sur": [36.2704, -121.8081],
+                "Silicon Valley": [37.3875, -122.0575],
+            };
+
+            const accommodationCoords = {
+                'Hotel del Sol': [37.7984, -122.4423],
+                'Airbnb Mariposa - Bass Lake': [37.3274, -119.5707],
+                'Hotel Vegas': [36.1180, -115.1711],
+                'Aibnb Page': [36.9189, -111.4649],
+                'Hotel Gran Canyon Bright Angel Lodge': [36.0563, -112.1432],
+                'Best Western Plus A Wayfarer\'s Inn And Suites': [35.1955, -114.0156],
+                'Airbnb LAX': [34.0736, -118.4004],
+                'Pixar Disney Hotel': [33.8075, -117.9231],
+                'Portola Hotel & Spa at Monterey Bay': [36.6021, -121.8924],
+                'Kimpton Hotel Enso @ Japantown': [37.7845, -122.4314]
+            };
+
+            // Parse Itinerary Data (Transposed)
+            const itineraryLines = csvData.trim().split('\n');
+            const matrix = itineraryLines.map(line => parseCsvLine(line));
+            const headers = matrix.map(row => row[0]);
+            const dayCount = matrix[0].length - 1;
+            const itineraryData = [];
+
+            for (let j = 1; j <= dayCount; j++) {
+                const dayObject = {};
+                for (let i = 0; i < headers.length; i++) {
+                    const header = headers[i];
+                    let value = matrix[i][j] || '';
+                    if (header === 'Lugar') {
+                        value = value.split('.')[0];
+                    }
+                    dayObject[header] = value;
+                }
+                itineraryData.push(dayObject);
+            }
+
+
+            // Parse Hotels Data
+            const hotelLines = hotelsCsvData.trim().split('\n');
+            const hotelHeaders = parseCsvLine(hotelLines[0]);
+            const hotelData = hotelLines.slice(1).map(line => {
+                if (line.trim() === '') return null;
+                const values = parseCsvLine(line);
+                const entry = {};
+                hotelHeaders.forEach((header, i) => {
+                    entry[header.trim()] = values[i] || '';
+                });
+                return entry;
+            }).filter(Boolean);
+
+            // Parse Flights Data
+            const flightLines = flightsCsvData.trim().split('\n');
+            const flightHeaders = parseCsvLine(flightLines[0]);
+            const flightData = flightLines.slice(1).map(line => {
+                if (line.trim() === '') return null;
+                const values = parseCsvLine(line);
+                const entry = {};
+                flightHeaders.forEach((header, i) => {
+                    entry[header.trim()] = values[i] || '';
+                });
+                return entry;
+            }).filter(Boolean);
+            
+            initMainMap(itineraryData, locations);
+            renderDays(itineraryData);
+            renderHotels(hotelData);
+            renderFlights(flightData);
+            setupAccordions(itineraryData, locations, accommodationCoords);
+            setupTabs();
+            document.getElementById('trip-duration').textContent = `${itineraryData.length} Días`;
+        });
+
+        function formatTextWithLinks(text) {
+            if (!text) return 'N/A';
+
+            // 1. Handle hyperlinks. Add a space after the closing tag to prevent words from sticking.
+            let formattedText = text.replace(/([^\[\]]+)\s*\[(https?:\/\/[^\]]+)\]/g, (match, linkText, url) => {
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 hover:underline font-semibold">${linkText.trim()}</a> `;
+            });
+            
+            // 2. Add line breaks for better readability
+            // NEW RULE: Replace all '%' with <br>.
+            formattedText = formattedText.replace(/%/g, '<br>');
+            
+            return formattedText.trim();
+        }
+
+
+        function initMainMap(data, locations) {
+            const map = L.map('main-map');
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            const routePoints = [];
+            let lastLocation = null;
+
+            data.forEach(day => {
+                const place = day.Lugar.replace(/"/g, '');
+                if (place !== lastLocation) {
+                    const coords = locations[place];
+                    if (coords) {
+                        routePoints.push(coords);
+                        L.marker(coords).addTo(map)
+                            .bindPopup(`<b>${place}</b><br>${day.Día}`);
+                    }
+                    lastLocation = place;
+                }
+            });
+
+            if (routePoints.length > 1) {
+                const polyline = L.polyline(routePoints, { color: 'blue', weight: 3, opacity: 0.7 }).addTo(map);
+                map.fitBounds(polyline.getBounds().pad(0.1));
+            }
+        }
+
+        function renderDays(data) {
+            const container = document.getElementById('days-container');
+            container.innerHTML = ''; // Clear previous content
+            let previousLocation = null;
+            
+            data.forEach((day, index) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-lg overflow-hidden';
+                
+                let routeButton = '';
+                const currentPlace = day.Lugar.replace(/"/g, '');
+                
+                if (day.Día === 'jueves 21 ago') {
+                    const origin = encodeURIComponent('San Francisco');
+                    const destination = encodeURIComponent('Oakhurst');
+                    routeButton = `<a href="https://www.google.com/maps/dir/${origin}/${destination}" target="_blank" rel="noopener noreferrer" class="inline-block bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold mt-2 mb-4"><i class="ph-fill ph-car mr-2"></i>Ver ruta a Oakhurst</a>`;
+                } else if (previousLocation && currentPlace !== previousLocation) {
+                    const origin = encodeURIComponent(previousLocation);
+                    const destination = encodeURIComponent(currentPlace);
+                    routeButton = `<a href="https://www.google.com/maps/dir/${origin}/${destination}" target="_blank" rel="noopener noreferrer" class="inline-block bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold mt-2 mb-4"><i class="ph-fill ph-car mr-2"></i>Ver ruta desde ${previousLocation}</a>`;
+                }
+                
+                card.innerHTML = `
+                    <button class="accordion-header w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition-colors focus:outline-none">
+                        <div>
+                            <p class="text-sm text-gray-500">${day.Día}</p>
+                            <h3 class="text-xl font-bold text-gray-800">${currentPlace}</h3>
+                        </div>
+                        <i class="ph-bold ph-caret-down text-2xl transition-transform"></i>
+                    </button>
+                    <div class="accordion-content overflow-hidden" style="max-height: 0;">
+                        <div class="p-6 border-t border-gray-200">
+                            ${routeButton}
+                            <div class="space-y-4 text-gray-700">
+                                <div class="info-item flex items-start"><i class="ph-bold ph-coffee text-lg text-yellow-600 mt-1 mr-3"></i><div><strong>Desayuno:</strong> ${formatTextWithLinks(day.Desayuno)}</div></div>
+                                <div class="info-item flex items-start"><i class="ph-bold ph-sun text-lg text-orange-500 mt-1 mr-3"></i><div><strong>Mañana:</strong> ${formatTextWithLinks(day.Mañana)}</div></div>
+                                <div class="info-item flex items-start"><i class="ph-bold ph-hamburger text-lg text-red-500 mt-1 mr-3"></i><div><strong>Comida:</strong> ${formatTextWithLinks(day.Comida)}</div></div>
+                                <div class="info-item flex items-start"><i class="ph-bold ph-camera text-lg text-indigo-500 mt-1 mr-3"></i><div><strong>Tarde:</strong> ${formatTextWithLinks(day.Tarde)}</div></div>
+                                <div class="info-item flex items-start"><i class="ph-bold ph-moon text-lg text-purple-600 mt-1 mr-3"></i><div><strong>Cena:</strong> ${formatTextWithLinks(day.Cena)}</div></div>
+                                <div class="info-item flex items-start"><i class="ph-bold ph-bed text-lg text-green-600 mt-1 mr-3"></i><div><strong>Alojamiento:</strong> ${formatTextWithLinks(day.Alojamiento)}</div></div>
+                            </div>
+                            <div class="mt-6">
+                                <h4 class="font-semibold mb-2 text-gray-700">Mapa de la Zona</h4>
+                                <div id="map-day-${index}" class="w-full h-64 rounded-lg bg-gray-200"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+                previousLocation = currentPlace;
+            });
+        }
+
+        function renderHotels(hotelData) {
+            const container = document.getElementById('hotels-container');
+            container.innerHTML = ''; // Clear previous content
+
+            hotelData.forEach(hotel => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-lg p-6';
+
+                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.Dirección)}`;
+
+                card.innerHTML = `
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">${hotel.Lugar.replace(/"/g, '')}</h3>
+                    <p class="text-gray-700">
+                        <i class="ph-bold ph-bed text-green-600 mr-2"></i>
+                        <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-600 hover:text-blue-800 hover:underline">${hotel.Nombre}</a>
+                    </p>
+                    <p class="text-gray-600 mt-2">
+                        <i class="ph-bold ph-map-pin text-red-500 mr-2"></i>
+                        ${hotel.Dirección.replace(/\n/g, ', ')}
+                    </p>
+                    <div class="flex justify-between text-sm text-gray-500 mt-3">
+                        <span><i class="ph-bold ph-calendar mr-1"></i>Fecha: ${hotel.Fecha}</span>
+                        <span><i class="ph-bold ph-moon mr-1"></i>Noches: ${parseFloat(hotel.Noches)}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderFlights(flightData) {
+            const container = document.getElementById('flights-container');
+            container.innerHTML = ''; // Clear previous content
+
+            flightData.forEach(flight => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-lg p-6';
+
+                card.innerHTML = `
+                    <h3 class="font-bold text-lg text-gray-800 mb-2 flex items-center">
+                        <i class="ph-bold ph-airplane-tilt mr-2 text-blue-500"></i>
+                        Vuelo ${flight.Vuelo}
+                    </h3>
+                    <p class="text-gray-700 font-semibold text-xl my-3">${flight.Ruta}</p>
+                    <div class="text-gray-600 space-y-2">
+                        <p><i class="ph-bold ph-airplane-takeoff mr-2 text-green-500"></i><strong>Salida:</strong> ${flight.Salida}</p>
+                        <p><i class="ph-bold ph-airplane-landing mr-2 text-red-500"></i><strong>Llegada:</strong> ${flight.Llegada}</p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function setupAccordions(data, locations, accommodationCoords) {
+            const accordions = document.querySelectorAll('.accordion-header');
+            accordions.forEach((accordion, index) => {
+                accordion.addEventListener('click', () => {
+                    const content = accordion.nextElementSibling;
+                    const icon = accordion.querySelector('i');
+                    const isOpen = content.style.maxHeight !== '0px';
+
+                    // Close all other accordions
+                    accordions.forEach((otherAccordion, otherIndex) => {
+                        if (otherIndex !== index) {
+                            otherAccordion.nextElementSibling.style.maxHeight = '0px';
+                            otherAccordion.querySelector('i').classList.remove('rotate-180');
+                        }
+                    });
+
+                    if (isOpen) {
+                        content.style.maxHeight = '0px';
+                        icon.classList.remove('rotate-180');
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        icon.classList.add('rotate-180');
+                        
+                        // Initialize map if it hasn't been already
+                        const mapContainer = document.getElementById(`map-day-${index}`);
+                        if (mapContainer && !mapContainer.classList.contains('leaflet-container')) {
+                            const dayData = data[index];
+                            const accommodationText = dayData.Alojamiento.split('[')[0].trim();
+                            let coords = accommodationCoords[accommodationText];
+                            let zoom = 15;
+                            let popupText = accommodationText;
+
+                            // Fallback to general location if specific accommodation coords aren't found
+                            if (!coords) {
+                                const place = dayData.Lugar.replace(/"/g, '');
+                                coords = locations[place];
+                                zoom = 13;
+                                popupText = place;
+                            }
+                            
+                            if (coords) {
+                                const map = L.map(`map-day-${index}`).setView(coords, zoom);
+                                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                }).addTo(map);
+                                L.marker(coords).addTo(map).bindPopup(`<b>${popupText}</b>`);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function setupTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tab = button.dataset.tab;
+
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === `${tab}-content`) {
+                            content.classList.add('active');
+                        }
+                    });
+                });
+            });
+        }
+
+    </script>
+</body>
+</html>
