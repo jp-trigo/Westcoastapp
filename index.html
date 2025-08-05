@@ -392,15 +392,33 @@ IB0356,SFO-MAD,6 septiembre 17:45,7 septiembre 14:10`;
                     const destination = encodeURIComponent(currentPlace);
                     routeButton = `<a href="https://www.google.com/maps/dir/${origin}/${destination}" target="_blank" rel="noopener noreferrer" class="inline-block bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold mt-2 mb-4"><i class="ph-fill ph-car mr-2"></i>Ver ruta desde ${previousLocation}</a>`;
                 }
+
+                let headerContent;
+                if (day.Día === 'martes 19 ago') {
+                    headerContent = `
+                        <div class="accordion-header w-full text-left p-6 flex justify-between items-center relative bg-cover bg-center h-36" style="background-image: url('https://uploads.dicasdelasvegas.com.br/sites/8/2014/08/Ghirardelli-Square-em-San-Francisco-1-768x282.jpg');">
+                            <div class="absolute inset-0 bg-black opacity-50 rounded-t-xl"></div>
+                            <div class="relative z-10 text-white">
+                                <p class="text-sm">${day.Día}</p>
+                                <h3 class="text-xl font-bold">${currentPlace}</h3>
+                            </div>
+                            <i class="ph-bold ph-caret-down text-2xl transition-transform relative z-10 text-white"></i>
+                        </div>
+                    `;
+                } else {
+                     headerContent = `
+                        <button class="accordion-header w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition-colors focus:outline-none">
+                            <div>
+                                <p class="text-sm text-gray-500">${day.Día}</p>
+                                <h3 class="text-xl font-bold text-gray-800">${currentPlace}</h3>
+                            </div>
+                            <i class="ph-bold ph-caret-down text-2xl transition-transform"></i>
+                        </button>
+                    `;
+                }
                 
                 card.innerHTML = `
-                    <button class="accordion-header w-full text-left p-6 flex justify-between items-center hover:bg-gray-50 transition-colors focus:outline-none">
-                        <div>
-                            <p class="text-sm text-gray-500">${day.Día}</p>
-                            <h3 class="text-xl font-bold text-gray-800">${currentPlace}</h3>
-                        </div>
-                        <i class="ph-bold ph-caret-down text-2xl transition-transform"></i>
-                    </button>
+                    ${headerContent}
                     <div class="accordion-content overflow-hidden" style="max-height: 0;">
                         <div class="p-6 border-t border-gray-200">
                             ${routeButton}
@@ -553,4 +571,5 @@ IB0356,SFO-MAD,6 septiembre 17:45,7 septiembre 14:10`;
     </script>
 </body>
 </html>
+
 
