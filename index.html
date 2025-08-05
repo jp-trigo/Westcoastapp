@@ -270,6 +270,28 @@ IB0356,SFO-MAD,6 septiembre 17:45,7 septiembre 14:10`;
                 'Kimpton Hotel Enso @ Japantown': [37.7845, -122.4314]
             };
 
+            const dayImages = {
+                'martes 19 ago': 'https://uploads.dicasdelasvegas.com.br/sites/8/2014/08/Ghirardelli-Square-em-San-Francisco-1-768x282.jpg',
+                'miércoles 20 ago': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Golden_Gate_Bridge_and_San_Francisco_skyline_from_Hawk_Hill_at_Blue_Hour_dllu.jpg/1600px-Golden_Gate_Bridge_and_San_Francisco_skyline_from_Hawk_Hill_at_Blue_Hour_dllu.jpg',
+                'jueves 21 ago': 'https://www.sfmta.com/files/styles/hero_slideshow_large_2x/public/hero-images/2017/09/160924_mh_050.jpg?itok=jPOWc1U4',
+                'viernes 22 ago': 'https://practicalwanderlust.com/wp-content/uploads/2021/07/Things-to-do-in-Yosemite-National-Park.jpg',
+                'sábado 23 ago': 'https://www.bestwestern.com/content/dam/best-western/hero-image/destinations/united-states/california/sequoia-park-1140x300.jpg',
+                'domingo 24 ago': 'https://www.goldengatecasino.com/wp-content/uploads/Modern-Day-Las-Vegas-Skyline-1088x400.jpg',
+                'lunes 25 ago': 'https://thetourguy.com/wp-content/uploads/2021/07/South-Strip-Las-Vegas-1.jpeg',
+                'martes 26 ago': 'https://cdn.prod.website-files.com/61549f9352f3558157a226ea/67198a22850478e488439ff1_Grand-canyon-picture-collage-illustration.webp',
+                'miércoles 27 ago': 'https://i1.pickpik.com/photos/654/31/637/horseshoe-bend-canyon-river-redrock-preview.jpg',
+                'jueves 28 ago': 'https://live.staticflickr.com/65535/51434406875_16825fa7c3_b.jpg',
+                'viernes 29 ago': 'https://images.rawpixel.com/image_social_landscape/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA5L2xvYzIwMjE3NTY5MzUtaW1hZ2UuanBn.jpg',
+                'sábado 30 ago': 'https://live.staticflickr.com/65535/2825852528_41ff2a44b7_b.jpg',
+                'domingo 31 ago': 'https://www.visittheusa.mx/sites/default/files/styles/hero_full_width_1280x350/public/images/exp-background/2022-03/47acdb98ee30c6a11cfc36a573db4e77.jpeg?h=33359f8a&itok=2wO1LwpB',
+                'lunes 1 sept': 'https://www.civitatis.com/f/estados-unidos/los-angeles/guia/hollywood-boulevard.jpg',
+                'martes 2 sept': 'https://i.blogs.es/6fdc41/star-wars-ge-disneyland-detail/650_1200.jpg',
+                'miércoles 3 sept': 'https://pasaportemagico.com/wp-content/uploads/2024/05/California-adventure-park-banner-new-1024x463.png',
+                'jueves 4 sept': 'https://www.iviaggidimonique.it/wp-content/uploads/da-san-francisco-los-angeles-big-sur-itinerario-.jpg',
+                'viernes 5 sept': 'https://dreamingcalifornia.es/wp-content/uploads/2019/11/VCW_D_SiliconValley_Hero_20140708_Google_19-copy-1280x642_0-1-1024x512-1.jpg',
+                'sábado 6 sept': 'https://www.civitatis.com/f/estados-unidos/san-francisco/guia/alcatraz.jpg',
+            };
+
             // Parse Itinerary Data (Transposed)
             const itineraryLines = csvData.trim().split('\n');
             const matrix = itineraryLines.map(line => parseCsvLine(line));
@@ -318,7 +340,7 @@ IB0356,SFO-MAD,6 septiembre 17:45,7 septiembre 14:10`;
             }).filter(Boolean);
             
             initMainMap(itineraryData, locations);
-            renderDays(itineraryData);
+            renderDays(itineraryData, dayImages);
             renderHotels(hotelData);
             renderFlights(flightData);
             setupAccordions(itineraryData, locations, accommodationCoords);
@@ -371,7 +393,7 @@ IB0356,SFO-MAD,6 septiembre 17:45,7 septiembre 14:10`;
             }
         }
 
-        function renderDays(data) {
+        function renderDays(data, dayImages) {
             const container = document.getElementById('days-container');
             container.innerHTML = ''; // Clear previous content
             let previousLocation = null;
@@ -394,9 +416,11 @@ IB0356,SFO-MAD,6 septiembre 17:45,7 septiembre 14:10`;
                 }
 
                 let headerContent;
-                if (day.Día === 'martes 19 ago') {
+                const imageUrl = dayImages[day.Día];
+                
+                if (imageUrl) {
                     headerContent = `
-                        <div class="accordion-header w-full text-left p-6 flex justify-between items-center relative bg-cover bg-center h-36" style="background-image: url('https://uploads.dicasdelasvegas.com.br/sites/8/2014/08/Ghirardelli-Square-em-San-Francisco-1-768x282.jpg'); background-position: center 25%;">
+                        <div class="accordion-header w-full text-left p-6 flex justify-between items-center relative bg-cover bg-center h-36" style="background-image: url('${imageUrl}'); background-position: center 25%;">
                             <div class="absolute inset-0 bg-black opacity-50 rounded-t-xl"></div>
                             <div class="relative z-10 text-white">
                                 <p class="text-sm">${day.Día}</p>
@@ -571,5 +595,6 @@ IB0356,SFO-MAD,6 septiembre 17:45,7 septiembre 14:10`;
     </script>
 </body>
 </html>
+
 
 
