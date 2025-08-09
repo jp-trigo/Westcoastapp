@@ -1,6 +1,6 @@
 {
-  "name": "App - West Coast",
-  "short_name": "West Coast",
+  "name": "Viaje - Costa Oeste",
+  "short_name": "Viaje Costa Oeste",
   "description": "Planificador de viaje para la Costa Oeste.",
   "start_url": "index.html",
   "display": "standalone",
